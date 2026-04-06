@@ -6,6 +6,9 @@ let package = Package(
     name: "union-toast",
     platforms: [
         .iOS(.v18)
+        .macOS(.v10_15),
+        .tvOS(.v13),
+        .watchOS(.v6)
     ],
     products: [
         .library(
