@@ -212,9 +212,6 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
         window.isUserInteractionEnabled = true
         window.backgroundColor = .clear
 
-        if let mainStyle = mainWindow.overrideUserInterfaceStyle {
-            window.overrideUserInterfaceStyle = mainStyle
-        }
     }
 
     private func updateHittableRect(expanded: Bool) {

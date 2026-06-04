@@ -58,9 +58,7 @@ where Item: Identifiable & Equatable {
             style: .dynamicIsland,
             item: newItem,
             dismissDelay: dismissDelay,
-            onDismiss: { [weak self] in
-                guard let self else { return }
-
+            onDismiss: {
                 // Only clear the binding if it still points to this item.
                 DispatchQueue.main.async {
                     if self.item?.id == newItem.id {

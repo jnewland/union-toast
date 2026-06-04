@@ -30,6 +30,12 @@ public struct _ToastExample: View {
     // MARK: - Dynamic Island toast state
     @State private var showDynamicIslandToast = false
 
+    // MARK: - Item-based Dynamic Island state (modifier-driven)
+    @State private var activeDIToast: ExampleToast?
+
+    // MARK: - Controller-driven item-based DI state
+    @State private var diItemToast = ExampleDIToast(id: UUID(), title: "", icon: "")
+
     public init() {}
 
     public var body: some View {
@@ -52,6 +58,10 @@ public struct _ToastExample: View {
         .toast(item: $activeToast) { toast in
             Label(toast.title, systemImage: toast.icon)
                 .foregroundStyle(toast.color)
+        }
+        // Item-based modifier with Dynamic Island style (separate binding to avoid conflicts)
+        .toast(item: $activeDIToast, style: .dynamicIsland) { toast in
+            Label(toast.title, systemImage: toast.icon)
         }
         .toast(isPresented: $showTintedToast) {
             Label("Tinted Background", systemImage: "paintpalette.fill")
@@ -199,27 +209,86 @@ public struct _ToastExample: View {
         }
     }
 
+    // MARK: - Dynamic Island Examples
+
     private var dynamicIslandSection: some View {
         Section {
-            Button("Show Dynamic Island Toast") {
+            // MARK: Modifier-driven
+            Button("Modifier (Boolean Binding)") {
                 showDynamicIslandToast = true
             }
 
-            Button("Show via Controller (Dynamic Island)") {
+            Button("Modifier (Item-Based, DI Style)") {
+                activeDIToast = ExampleToast(
+                    title: "Item + Dynamic Island",
+                    icon: "star.fill",
+                    color: .yellow
+                )
+            }
+
+            Divider()
+
+            // MARK: Controller-driven — basic content
+            Button("Controller (Default, 3s)") {
                 ToastController.show(style: .dynamicIsland) {
-                    Label("Controller Dynamic Island", systemImage: "sparkles.fill")
+                    Label("Copied to clipboard", systemImage: "doc.on.doc.fill")
                 }
             }
 
-            Button("Show via Controller (Dynamic Island, 5s)") {
-                ToastController.show(style: .dynamicIsland, dismissDelay: .seconds(5)) {
-                    Label("Longer DI Toast (5s)", systemImage: "clock.fill")
+            Button("Controller (Custom Delay, 8s)") {
+                ToastController.show(style: .dynamicIsland, dismissDelay: .seconds(8)) {
+                    Label("Long-running task", systemImage: "hourglass")
                 }
             }
+
+            Divider()
+
+            // MARK: Controller-driven — item-based (replacement + duplicate suppression)
+            Button("Controller Item #1") {
+                ToastController.show(style: .dynamicIsland, item: diItemToast) { toast in
+                    Label(toast.title, systemImage: toast.icon)
+                }
+            }
+
+            Button("Controller Item #2 (replaces #1)") {
+                diItemToast = ExampleDIToast(id: UUID(), title: "Replaced!", icon: "arrow.triangle.2.circlepath")
+                ToastController.show(style: .dynamicIsland, item: diItemToast) { toast in
+                    Label(toast.title, systemImage: toast.icon)
+                }
+            }
+
+            Button("Rapid Fire (3 replacements in 1s)") {
+                let items = [
+                    ExampleDIToast(id: UUID(), title: "One", icon: "1.circle.fill"),
+                    ExampleDIToast(id: UUID(), title: "Two", icon: "2.circle.fill"),
+                    ExampleDIToast(id: UUID(), title: "Three", icon: "3.circle.fill"),
+                ]
+
+                for (index, item) in items.enumerated() {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.35) {
+                        ToastController.show(style: .dynamicIsland, item: item) { toast in
+                            Label(toast.title, systemImage: toast.icon)
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            // MARK: Lifecycle controls
+            Button("Dismiss Current Toast", role: .destructive) {
+                ToastController.dismiss()
+            }
+
+            Button("Remove Overlay Entirely", role: .destructive) {
+                ToastController.remove()
+            }
         } header: {
-            Text("Dynamic Island Toast")
+            Text("Dynamic Island")
         } footer: {
-            Text("Uses .toast(isPresented:, style: .dynamicIsland) or ToastController.show(style:.). Falls back to regular toast on devices without Dynamic Island.")
+            Text(
+                "Controller-driven DI toasts use ToastController.show(style:.dynamicIsland). "
+            )
         }
     }
 }
@@ -231,6 +300,14 @@ private struct ExampleToast: Identifiable, Equatable {
     let title: String
     let icon: String
     let color: Color
+}
+
+// MARK: - Example DI Toast Model (for controller item-based examples)
+
+private struct ExampleDIToast: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let icon: String
 }
 
 // MARK: - Preview

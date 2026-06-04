@@ -99,13 +99,21 @@ final class DynamicIslandToastPresenter {
         let passthroughWindow = PassThroughWindow(windowScene: windowScene)
         configurePassthroughWindow(passthroughWindow, mainWindow: mainWindow)
 
+        let dismissHandler: () -> Void = { [weak self] in
+            guard let self else { return }
+            state.collapse()
+            observableState.isExpanded = false
+            passthroughWindow.hittableRect = nil
+            isPresenting = false
+        }
+
         let wrapperView = DynamicIslandToastContentWrapper(
             state: observableState,
             onDismiss: { dismissHandler(); onDismiss() },
             contentProvider: content
         )
         let hosting = StatusBarHostingController(rootView: wrapperView)
-        hosting.view.backgroundColor = .clear
+        hosting.view.backgroundColor = UIColor.clear
 
         passthroughWindow.rootViewController = hosting
         hosting.view.setNeedsLayout()
@@ -131,9 +139,6 @@ final class DynamicIslandToastPresenter {
         window.isUserInteractionEnabled = true
         window.backgroundColor = .clear
 
-        if let mainStyle = mainWindow.overrideUserInterfaceStyle {
-            window.overrideUserInterfaceStyle = mainStyle
-        }
     }
 
     private func updateContent(
@@ -150,7 +155,7 @@ final class DynamicIslandToastPresenter {
             guard let self else { return }
             state.collapse()
             observableState.isExpanded = false
-            hostingController?.isStatusBarHidden = false
+            hostingController.isStatusBarHidden = false
             overlayWindow.hittableRect = nil
             isPresenting = false
         }
