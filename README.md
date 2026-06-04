@@ -178,19 +178,21 @@ The Dynamic Island style uses a 3-second default dismiss delay (versus 6.5 secon
 ## Behavior & defaults
 
 - Toasts auto-dismiss after 6.5 seconds unless a custom `dismissDelay` is provided.
+- Dynamic Island toasts use a shorter 3-second default dismiss delay (both modifier and controller paths).
 - Interacting with the toast (hold or drag) pauses the timer; releasing resumes it.
 - Swiping up dismisses the toast with the same blur/squish animation used by the auto-dismiss path.
 - When a new toast arrives while one is on screen, the existing toast animates out while the new one animates in, matching system notification behavior.
 - Item-based presentations automatically ignore duplicate items that repeat within ~1 second to avoid accidental double posts.
 - Overlay windows are automatically created per scene, so toasts stay above modals and sheets without additional setup.
+- On non-Dynamic Island devices, `style: .dynamicIsland` gracefully falls back to regular toast presentation.
 
 ## Public API
 
 - `View.toast(isPresented:style:onDismiss:dismissDelay:content:)`
-- `View.toast(item:style:onDismiss:dismissDelay:content:)` (`Item: Identifiable & Equatable`)
+- `View.toast(item:style:onDismiss:dismissDelay:maxTrackedPresentations:content:)` (`Item: Identifiable & Equatable`, `style` is now honored for both `.regular` and `.dynamicIsland`)
 - `View.toastBackground(alignment:content:)` and `View.toastBackground(_:)` for `ShapeStyle` backgrounds
-- `ToastController.show(dismissDelay:content:)`
-- `ToastController.show(item:dismissDelay:onDismiss:content:)`
+- `ToastController.show(style:dismissDelay:content:)`
+- `ToastController.show(style:item:dismissDelay:onDismiss:content:)` (`Item: Identifiable & Equatable`)
 - `ToastController.showWithHaptic(dismissDelay:haptic:content:)`
 - `ToastController.dismiss()` / `ToastController.remove()`
 

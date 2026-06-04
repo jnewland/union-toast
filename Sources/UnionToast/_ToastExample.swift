@@ -204,10 +204,22 @@ public struct _ToastExample: View {
             Button("Show Dynamic Island Toast") {
                 showDynamicIslandToast = true
             }
+
+            Button("Show via Controller (Dynamic Island)") {
+                ToastController.show(style: .dynamicIsland) {
+                    Label("Controller Dynamic Island", systemImage: "sparkles.fill")
+                }
+            }
+
+            Button("Show via Controller (Dynamic Island, 5s)") {
+                ToastController.show(style: .dynamicIsland, dismissDelay: .seconds(5)) {
+                    Label("Longer DI Toast (5s)", systemImage: "clock.fill")
+                }
+            }
         } header: {
             Text("Dynamic Island Toast")
         } footer: {
-            Text("Uses .toast(isPresented:, style: .dynamicIsland). On Dynamic Island devices, animates from the island. Falls back to regular toast on other devices.")
+            Text("Uses .toast(isPresented:, style: .dynamicIsland) or ToastController.show(style:.). Falls back to regular toast on devices without Dynamic Island.")
         }
     }
 }
