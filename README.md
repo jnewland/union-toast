@@ -175,6 +175,41 @@ On devices with a Dynamic Island, toasts can animate directly from the island fo
 
 The Dynamic Island style uses a 3-second default dismiss delay (versus 6.5 seconds for regular toasts) and supports swipe-up to dismiss.
 
+#### Dark adaptation
+
+Dynamic Island content always renders on a black background. The library automatically forces `colorScheme = .dark` on the content subtree so semantic colors (`.primary`, `.secondary`, `Color(.label)`) resolve to their dark variants and stay legible. Write your views as you normally would — they'll adapt automatically.
+
+Colored elements (e.g. `.green` checkmarks, multicolor SF Symbols) are preserved — the old hard-coded white foreground is no longer applied.
+
+> **Note:** `.environment(\.colorScheme, .dark)` re-resolves SwiftUI `Color`/symbols/materials but does not flip the UIKit `userInterfaceStyle` trait. Content embedded via `UIViewRepresentable` won't auto-adapt — set your own appearance for those.
+
+#### Explicit style branching
+
+Read `@Environment(\.toastPresentationStyle)` to branch on the actual presentation style:
+
+```swift
+struct AdaptiveToast: View {
+    @Environment(\.toastPresentationStyle) private var style
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Upload complete")
+                .fontWeight(.semibold)
+
+            if style == .dynamicIsland {
+                Text("Dynamic Island")
+                    .font(.caption)
+            } else {
+                Text("Regular overlay")
+                    .font(.caption)
+            }
+        }
+    }
+}
+```
+
+The value reflects the *resolved* style — if you request `.dynamicIsland` on a non-Dynamic-Island device, this will be `.regular`.
+
 ## Behavior & defaults
 
 - Toasts auto-dismiss after 6.5 seconds unless a custom `dismissDelay` is provided.
@@ -195,6 +230,7 @@ The Dynamic Island style uses a 3-second default dismiss delay (versus 6.5 secon
 - `ToastController.show(style:item:dismissDelay:onDismiss:content:)` (`Item: Identifiable & Equatable`)
 - `ToastController.showWithHaptic(dismissDelay:haptic:content:)`
 - `ToastController.dismiss()` / `ToastController.remove()`
+- `@Environment(\.toastPresentationStyle)` — read the resolved presentation style (`.regular` or `.dynamicIsland`) from within toast content
 
 ## Requirements
 

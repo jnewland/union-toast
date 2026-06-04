@@ -241,6 +241,28 @@ public struct _ToastExample: View {
                 }
             }
 
+            // MARK: Custom view — semantic colors + explicit style branching
+            Button("Controller (Custom View, Semantic Colors)") {
+                ToastController.show(style: .dynamicIsland) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Upload complete")
+                                .fontWeight(.semibold)
+                        }
+                        Text("3 files synced to cloud")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Button("Controller (Reads toastPresentationStyle)") {
+                ToastController.show(style: .dynamicIsland) {
+                    AdaptiveToastContent(title: "Adaptive Toast", icon: "lightbulb.fill")
+                }
+            }
+
             Divider()
 
             // MARK: Controller-driven — item-based (replacement + duplicate suppression)
@@ -308,6 +330,37 @@ private struct ExampleDIToast: Identifiable, Equatable {
     let id: UUID
     let title: String
     let icon: String
+}
+
+// MARK: - Adaptive Toast Content (demonstrates toastPresentationStyle env)
+
+/// A view that adapts its layout based on the surrounding toast presentation style.
+private struct AdaptiveToastContent: View {
+    let title: String
+    let icon: String
+
+    @Environment(\.toastPresentationStyle) private var presentationStyle
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(.yellow)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .fontWeight(.semibold)
+
+                // Branch on presentation style for different subtitle copy.
+                Text(
+presentationStyle == .dynamicIsland
+                    ? "Dynamic Island"
+                    : "Regular overlay"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
 }
 
 // MARK: - Preview

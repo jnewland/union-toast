@@ -27,6 +27,9 @@ _Avoid_: wrapper, decorator
 **Item-based toast**:
 A toast driven by an `Identifiable & Equatable` payload. New items replace the current toast with choreographed animation. Duplicate items within ~1 second are suppressed automatically.
 
+**Resolved presentation style**:
+The actual `ToastStyle` a view is being rendered as, available via `@Environment(\.toastPresentationStyle)`. Reflects the *resolved* style — if `.dynamicIsland` is requested on a non-DI device, this reports `.regular`. Dynamic Island content renders in a forced-dark environment (`colorScheme = .dark`) so semantic colors stay legible on the always-black background.
+
 ## Relationships
 
 - A **Toast** is presented via either a **Modifier** (declarative) or the **Controller** (imperative).

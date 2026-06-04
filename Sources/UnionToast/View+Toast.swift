@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// The visual style for toast presentation
-public enum ToastStyle {
+public enum ToastStyle: Sendable {
     /// Standard toast that slides down from the top
     case regular
     /// Dynamic Island-style toast that animates from the island on supported devices,

@@ -464,6 +464,8 @@ struct ToastView<Content: View>: View {
     func decoratedContent<Inner: View>(_ view: Inner) -> some View {
         view
             .modifier(ConditionalToastBackgroundWrapper())
+            // Inject resolved presentation style for explicit branching.
+            .environment(\.toastPresentationStyle, .regular)
     }
 }
 

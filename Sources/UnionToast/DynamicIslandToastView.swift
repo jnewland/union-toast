@@ -111,8 +111,11 @@ struct DynamicIslandToastView<Content: View>: View {
     @ViewBuilder
     func toastContent(haveDynamicIsland: Bool) -> some View {
         content()
-            .foregroundStyle(.white)
             .labelStyle(DynamicIslandLabelStyle())
+            // Force dark so semantic colors resolve for the always-black background.
+            .environment(\.colorScheme, .dark)
+            // Inject resolved presentation style for explicit branching.
+            .environment(\.toastPresentationStyle, .dynamicIsland)
     }
 }
 
