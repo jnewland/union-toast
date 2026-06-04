@@ -30,6 +30,9 @@ A toast driven by an `Identifiable & Equatable` payload. New items replace the c
 **Resolved presentation style**:
 The actual `ToastStyle` a view is being rendered as, available via `@Environment(\.toastPresentationStyle)`. Reflects the *resolved* style — if `.dynamicIsland` is requested on a non-DI device, this reports `.regular`. Dynamic Island content renders in a forced-dark environment (`colorScheme = .dark`) so semantic colors stay legible on the always-black background.
 
+**Island guide**:
+The ``ToastIslandGuide`` value published via `@Environment(\.toastIslandGuide)`. Describes the physical Dynamic Island cutout (`hasPhysicalIsland`, `cutout` CGRect, `topClearance`) so custom toast content can lay out around it. Off-island the guide is all-zero / no-op.
+
 ## Relationships
 
 - A **Toast** is presented via either a **Modifier** (declarative) or the **Controller** (imperative).

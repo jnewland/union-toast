@@ -263,6 +263,30 @@ public struct _ToastExample: View {
                 }
             }
 
+            // MARK: Custom view — island cutout avoidance
+            Button("Controller (Custom View + .dynamicIslandSafeArea())") {
+                ToastController.show(style: .dynamicIsland) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "photo.fill")
+                                .foregroundStyle(.cyan)
+                            Text("Photos uploaded")
+                                .fontWeight(.semibold)
+                        }
+                        Text("12 photos added to shared album")
+                            .foregroundStyle(.secondary)
+                        ProgressView(value: 1.0)
+                    }
+                    .dynamicIslandSafeArea()
+                }
+            }
+
+            Button("Controller (Split Around Cutout)") {
+                ToastController.show(style: .dynamicIsland) {
+                    SplitAroundCutoutView()
+                }
+            }
+
             Divider()
 
             // MARK: Controller-driven — item-based (replacement + duplicate suppression)
@@ -358,6 +382,53 @@ presentationStyle == .dynamicIsland
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Split Around Cutout View (demonstrates toastIslandGuide env)
+
+/// A view that splits content left and right of the Dynamic Island cutout.
+private struct SplitAroundCutoutView: View {
+    @Environment(\.toastIslandGuide) private var guide
+
+    var body: some View {
+        GeometryReader { geo in
+            let cutout = guide.cutout
+            let size = geo.size
+
+            // Left gutter: from leading edge to cutout.x
+            let leftWidth = max(cutout.origin.x, 0)
+            // Right gutter: from cutout.maxX to trailing edge
+            let rightWidth = max(size.width - cutout.maxX, 0)
+
+            ZStack(alignment: .topLeading) {
+                // Left side content
+                if leftWidth > 20 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Image(systemName: "gauge.low")
+                            .foregroundStyle(.green)
+                        Text("CPU 12%")
+                            .font(.caption2)
+                    }
+                    .frame(width: leftWidth, height: cutout.height > 0 ? cutout.height : size.height)
+                    .padding(.horizontal, 8)
+                }
+
+                // Right side content (anchored to trailing edge of cutout)
+                if rightWidth > 20 {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("2.1 GB")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "memorychip")
+                            .foregroundStyle(.purple)
+                    }
+                    .frame(width: rightWidth, height: cutout.height > 0 ? cutout.height : size.height)
+                    .offset(x: max(cutout.maxX, 0))
+                    .padding(.horizontal, 8)
+                }
             }
         }
     }

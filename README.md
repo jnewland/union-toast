@@ -210,6 +210,37 @@ struct AdaptiveToast: View {
 
 The value reflects the *resolved* style — if you request `.dynamicIsland` on a non-Dynamic-Island device, this will be `.regular`.
 
+#### Avoiding the island cutout in custom content
+
+The default `Label` layout routes icon and title into side gutters that dodge the physical island. When you provide a **custom (non-`Label`) view**, full-width content can be occluded by the island cutout at top-center. You have three options:
+
+1. **One-line convenience** — pad content down to clear the cutout:
+    ```swift
+    ToastController.show(style: .dynamicIsland) {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Photos uploaded").fontWeight(.semibold)
+            ProgressView(value: 1.0)
+        }
+        .dynamicIslandSafeArea() // clears the cutout; no-op off-island
+    }
+    ```
+2. **Full control** — read the cutout rect and lay out around it:
+    ```swift
+    struct SplitToast: View {
+        @Environment(\.toastIslandGuide) private var guide
+
+        var body: some View {
+            GeometryReader { geo in
+                let cutout = guide.cutout // CGRect of the occluded region
+                // Place content left and right of cutout...
+            }
+        }
+    }
+    ```
+3. **Default `Label`** — already dodges the island via side gutters (no action needed).
+
+The ``ToastIslandGuide`` is a no-op off-island (`hasPhysicalIsland == false`, `cutout == .zero`), so the same view works everywhere.
+
 ## Behavior & defaults
 
 - Toasts auto-dismiss after 6.5 seconds unless a custom `dismissDelay` is provided.
@@ -231,6 +262,8 @@ The value reflects the *resolved* style — if you request `.dynamicIsland` on a
 - `ToastController.showWithHaptic(dismissDelay:haptic:content:)`
 - `ToastController.dismiss()` / `ToastController.remove()`
 - `@Environment(\.toastPresentationStyle)` — read the resolved presentation style (`.regular` or `.dynamicIsland`) from within toast content
+- `@Environment(\.toastIslandGuide)` — read the Dynamic Island cutout rect for custom content layout
+- `View.dynamicIslandSafeArea()` — convenience modifier that pads content down to clear the island cutout
 
 ## Requirements
 

@@ -38,12 +38,23 @@ struct DynamicIslandToastView<Content: View>: View {
             // Expanded properties
             let expandedWidth = size.width - 20
             let expandedHeight: CGFloat = haveDynamicIsland ? 90 : 70
+
+            // Island cutout guide for custom content layout.
+            let islandGuide = ToastIslandGuide(
+                hasPhysicalIsland: haveDynamicIsland,
+                cutout: CGRect(
+                    x: (expandedWidth - dynamicIslandWidth) / 2,
+                    y: 0,
+                    width: dynamicIslandWidth,
+                    height: dynamicIslandHeight
+                )
+            )
             let scaleX: CGFloat = isExpanded ? 1 : (dynamicIslandWidth / expandedWidth)
             let scaleY: CGFloat = isExpanded ? 1 : (dynamicIslandHeight / expandedHeight)
 
             toastBackground
                 .overlay {
-                    toastContent(haveDynamicIsland: haveDynamicIsland)
+                    toastContent(haveDynamicIsland: haveDynamicIsland, guide: islandGuide)
                         // Keeping the exact expanded size and using the scale to shrink and fit
                         // Avoids any text wraps and other such things!
                         .frame(width: expandedWidth, height: expandedHeight)
@@ -109,13 +120,15 @@ struct DynamicIslandToastView<Content: View>: View {
     }
 
     @ViewBuilder
-    func toastContent(haveDynamicIsland: Bool) -> some View {
+    func toastContent(haveDynamicIsland: Bool, guide: ToastIslandGuide) -> some View {
         content()
             .labelStyle(DynamicIslandLabelStyle())
             // Force dark so semantic colors resolve for the always-black background.
             .environment(\.colorScheme, .dark)
             // Inject resolved presentation style for explicit branching.
             .environment(\.toastPresentationStyle, .dynamicIsland)
+            // Inject island cutout guide for custom content layout.
+            .environment(\.toastIslandGuide, guide)
     }
 }
 

@@ -21,6 +21,35 @@ public extension EnvironmentValues {
     }
 }
 
+// MARK: - Island Guide
+
+/// Describes the Dynamic Island cutout that occludes toast content, so custom views
+/// can lay out around it. All zero / `hasPhysicalIsland == false` off the island.
+public struct ToastIslandGuide: Equatable, Sendable {
+    /// Whether a physical Dynamic Island is present (false on notch/fallback devices).
+    public var hasPhysicalIsland: Bool
+    /// The occluded cutout region, in the toast content's coordinate space.
+    public var cutout: CGRect
+    /// How far full-width content must move down to fully clear the cutout (0 when none).
+    public var topClearance: CGFloat { hasPhysicalIsland ? cutout.maxY : 0 }
+
+    public init(hasPhysicalIsland: Bool = false, cutout: CGRect = .zero) {
+        self.hasPhysicalIsland = hasPhysicalIsland
+        self.cutout = cutout
+    }
+}
+
+public extension EnvironmentValues {
+    var toastIslandGuide: ToastIslandGuide {
+        get { self[ToastIslandGuideKey.self] }
+        set { self[ToastIslandGuideKey.self] = newValue }
+    }
+}
+
 private struct ToastPresentationStyleKey: EnvironmentKey {
     static let defaultValue: ToastStyle = .regular
+}
+
+private struct ToastIslandGuideKey: EnvironmentKey {
+    static let defaultValue = ToastIslandGuide()
 }
