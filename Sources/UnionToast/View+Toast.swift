@@ -68,6 +68,7 @@ public extension View {
     ///   - dismissDelay: The duration before the toast automatically dismisses (default: 6.5 seconds)
     ///   - maxTrackedPresentations: Maximum number of presentations to track before cleanup (default: 10)
     ///   - content: A SwiftUI view builder that creates the toast content from the item
+    @ViewBuilder
     func toast<Item, Content>(
         item: Binding<Item?>,
         style: ToastStyle = .regular,
@@ -76,13 +77,23 @@ public extension View {
         maxTrackedPresentations: Int = 10,
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View where Item: Identifiable & Equatable, Content: View {
-        modifier(ToastItemModifier(
-            item: item,
-            dismissDelay: dismissDelay,
-            onDismiss: onDismiss,
-            toastContent: content,
-            maxTrackedPresentations: maxTrackedPresentations
-        ))
+        switch style {
+        case .regular:
+            modifier(ToastItemModifier(
+                item: item,
+                dismissDelay: dismissDelay,
+                onDismiss: onDismiss,
+                toastContent: content,
+                maxTrackedPresentations: maxTrackedPresentations
+            ))
+        case .dynamicIsland:
+            modifier(DynamicIslandToastItemModifier(
+                item: item,
+                dismissDelay: dismissDelay ?? .seconds(3),
+                onDismiss: onDismiss,
+                toastContent: content
+            ))
+        }
     }
 
 }

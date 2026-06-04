@@ -2,14 +2,12 @@
 //  DynamicIslandToastModifier.swift
 //  UnionToast
 //
-//  Created by Union on 1/8/26.
-//
 
 import SwiftUI
 
-// MARK: - Device Detection
+// MARK: - Device Detection (shared between modifier and presenter)
 
-private func hasDynamicIsland() -> Bool {
+func hasDynamicIsland() -> Bool {
     guard let windowScene = UIApplication.shared.connectedScenes
         .compactMap({ $0 as? UIWindowScene })
         .first(where: { $0.activationState == .foregroundActive }) ?? UIApplication.shared.connectedScenes
@@ -51,7 +49,7 @@ class DynamicIslandToastState {
 
 // MARK: - Status Bar Hosting Controller
 
-private class StatusBarHostingController<Content: View>: UIHostingController<Content> {
+class StatusBarHostingController<Content: View>: UIHostingController<Content> {
     var isStatusBarHidden: Bool = false {
         didSet {
             setNeedsStatusBarAppearanceUpdate()
@@ -132,7 +130,6 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         if deviceHasDynamicIsland == true {
-            // Use Dynamic Island toast
             content
                 .background(WindowExtractor { mainWindow in
                     createOverlayWindow(mainWindow)
@@ -142,8 +139,7 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
                         toastState.expand()
                         overlayController?.isStatusBarHidden = true
                         updateHittableRect(expanded: true)
-                        // Schedule auto-dismiss
-                        toastState.scheduleDismiss(after: dismissDelay) {
+                        toastState.scheduleDismiss(after: dismissDelay) { [self] in
                             isPresented = false
                             onDismiss?()
                         }
@@ -154,7 +150,6 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
                     }
                 }
         } else if deviceHasDynamicIsland == false {
-            // Fall back to regular toast on non-DI devices
             content
                 .modifier(ToastModifier(
                     isPresented: $isPresented,
@@ -163,7 +158,6 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
                     toastContent: toastContent
                 ))
         } else {
-            // Check device on appear
             content
                 .onAppear {
                     deviceHasDynamicIsland = hasDynamicIsland()
@@ -176,10 +170,7 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
               let windowScene = mainWindow.windowScene else { return }
 
         let passthroughWindow = PassThroughWindow(windowScene: windowScene)
-        passthroughWindow.windowLevel = .alert + 10
-        passthroughWindow.isHidden = false
-        passthroughWindow.isUserInteractionEnabled = true
-        passthroughWindow.backgroundColor = .clear
+        configurePassthroughWindow(passthroughWindow, mainWindow: mainWindow)
 
         let wrapperView = DynamicIslandToastWrapper(
             state: toastState,
@@ -192,31 +183,37 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
             },
             content: toastContent
         )
+
         let hosting = StatusBarHostingController(rootView: wrapperView)
         hosting.view.backgroundColor = .clear
 
         passthroughWindow.rootViewController = hosting
-
-        // Sync interface style with main window
-        passthroughWindow.overrideUserInterfaceStyle = mainWindow.overrideUserInterfaceStyle
-
-        // Force layout pass
         hosting.view.setNeedsLayout()
         hosting.view.layoutIfNeeded()
 
         self.overlayWindow = passthroughWindow
         self.overlayController = hosting
 
-        // Set initial state if already presented
         if isPresented {
             toastState.expand()
             hosting.isStatusBarHidden = true
             updateHittableRect(expanded: true)
-            // Schedule auto-dismiss
-            toastState.scheduleDismiss(after: dismissDelay) {
+
+            toastState.scheduleDismiss(after: dismissDelay) { [self] in
                 isPresented = false
                 onDismiss?()
             }
+        }
+    }
+
+    private func configurePassthroughWindow(_ window: PassThroughWindow, mainWindow: UIWindow) {
+        window.windowLevel = .alert + 10
+        window.isHidden = false
+        window.isUserInteractionEnabled = true
+        window.backgroundColor = .clear
+
+        if let mainStyle = mainWindow.overrideUserInterfaceStyle {
+            window.overrideUserInterfaceStyle = mainStyle
         }
     }
 
@@ -226,18 +223,15 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
         if expanded {
             let screenWidth = window.bounds.width
             let safeAreaTop = window.safeAreaInsets.top
-            let topOffset = 11 + max((safeAreaTop - 59), 0)
+            let topOffset: CGFloat = 11 + max((safeAreaTop - 59), 0)
             let expandedWidth = screenWidth - 20
-            let expandedHeight: CGFloat = 90
 
-            // Toast is centered horizontally
-            let rect = CGRect(
+            window.hittableRect = CGRect(
                 x: 10,
                 y: topOffset,
                 width: expandedWidth,
-                height: expandedHeight
+                height: 90
             )
-            window.hittableRect = rect
         } else {
             window.hittableRect = nil
         }
