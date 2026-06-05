@@ -56,15 +56,16 @@ public final class ToastController: NSObject {
     ///   - style: The presentation style (default: .regular).
     ///           On non-Dynamic Island devices, `.dynamicIsland` falls back to regular presentation.
     ///   - dismissDelay: Optional override for the auto-dismiss delay. Defaults to 6.5s (regular) or 3s (Dynamic Island).
+    ///   - expandedHeight: Optional expanded height override for `.dynamicIsland` toasts (points). Ignored by `.regular`.
     ///   - content: View builder describing the toast UI.
-    public func show<Content: View>(style: ToastStyle = .regular, dismissDelay: Duration? = nil, @ViewBuilder content: @escaping () -> Content) {
+    public func show<Content: View>(style: ToastStyle = .regular, dismissDelay: Duration? = nil, expandedHeight: CGFloat? = nil, @ViewBuilder content: @escaping () -> Content) {
         let resolvedStyle = resolveStyle(style)
 
         switch resolvedStyle {
         case .regular:
             showRegular(dismissDelay: dismissDelay, content: content)
         case .dynamicIsland:
-            showDynamicIsland(dismissDelay: dismissDelay, content: content)
+            showDynamicIsland(dismissDelay: dismissDelay, expandedHeight: expandedHeight, content: content)
         }
     }
 
@@ -74,12 +75,14 @@ public final class ToastController: NSObject {
     ///           On non-Dynamic Island devices, `.dynamicIsland` falls back to regular presentation.
     ///   - item: Identifiable, equatable payload that drives the toast content.
     ///   - dismissDelay: Optional override for the auto-dismiss timing. Defaults to 6.5s (regular) or 3s (Dynamic Island).
+    ///   - expandedHeight: Optional expanded height override for `.dynamicIsland` toasts (points). Ignored by `.regular`.
     ///   - onDismiss: Callback invoked when the toast associated with `item` dismisses.
     ///   - content: View builder that renders the toast from the supplied item.
     public func show<Item: Identifiable & Equatable, ToastContent: View>(
         style: ToastStyle = .regular,
         item: Item,
         dismissDelay: Duration? = nil,
+        expandedHeight: CGFloat? = nil,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> ToastContent
     ) {
@@ -89,7 +92,7 @@ public final class ToastController: NSObject {
         case .regular:
             showRegularItem(item: item, dismissDelay: dismissDelay, onDismiss: onDismiss, content: content)
         case .dynamicIsland:
-            showDynamicIslandItem(item: item, dismissDelay: dismissDelay, onDismiss: onDismiss, content: content)
+            showDynamicIslandItem(item: item, dismissDelay: dismissDelay, expandedHeight: expandedHeight, onDismiss: onDismiss, content: content)
         }
     }
 
@@ -135,9 +138,10 @@ public extension ToastController {
     ///   - style: The presentation style (default: .regular).
     ///           On non-Dynamic Island devices, `.dynamicIsland` falls back to regular presentation.
     ///   - dismissDelay: Optional override for how long the toast remains visible before auto-dismiss.
+    ///   - expandedHeight: Optional expanded height override for `.dynamicIsland` toasts (points). Ignored by `.regular`.
     ///   - content: View builder describing the toast's contents.
-    static func show<Content: View>(style: ToastStyle = .regular, dismissDelay: Duration? = nil, @ViewBuilder content: @escaping () -> Content) {
-        shared.show(style: style, dismissDelay: dismissDelay, content: content)
+    static func show<Content: View>(style: ToastStyle = .regular, dismissDelay: Duration? = nil, expandedHeight: CGFloat? = nil, @ViewBuilder content: @escaping () -> Content) {
+        shared.show(style: style, dismissDelay: dismissDelay, expandedHeight: expandedHeight, content: content)
     }
 
     /// Presents a toast and plays the supplied haptic feedback before showing it.
@@ -156,16 +160,18 @@ public extension ToastController {
     ///           On non-Dynamic Island devices, `.dynamicIsland` falls back to regular presentation.
     ///   - item: Identifiable, equatable value representing the toast payload.
     ///   - dismissDelay: Optional override for how long the toast stays visible.
+    ///   - expandedHeight: Optional expanded height override for `.dynamicIsland` toasts (points). Ignored by `.regular`.
     ///   - onDismiss: Closure invoked after the toast tied to `item` dismisses.
     ///   - content: View builder that renders the toast for the supplied item.
     static func show<Item: Identifiable & Equatable, ToastContent: View>(
         style: ToastStyle = .regular,
         item: Item,
         dismissDelay: Duration? = nil,
+        expandedHeight: CGFloat? = nil,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> ToastContent
     ) {
-        shared.show(style: style, item: item, dismissDelay: dismissDelay, onDismiss: onDismiss, content: content)
+        shared.show(style: style, item: item, dismissDelay: dismissDelay, expandedHeight: expandedHeight, onDismiss: onDismiss, content: content)
     }
 
     /// Dismisses the currently presented toast, if any.
@@ -405,7 +411,7 @@ private extension ToastController {
 
     // MARK: - Dynamic Island Path
 
-    private func showDynamicIsland<Content: View>(dismissDelay: Duration?, content: @escaping () -> Content) {
+    private func showDynamicIsland<Content: View>(dismissDelay: Duration?, expandedHeight: CGFloat? = nil, content: @escaping () -> Content) {
         let delay = dismissDelay ?? .seconds(3)
 
         // Switch away from regular if needed.
@@ -438,6 +444,7 @@ private extension ToastController {
                 guard let self else { return }
                 handleDynamicIslandDismiss()
             },
+            expandedHeight: expandedHeight,
             content: wrappedContent
         )
     }
@@ -445,6 +452,7 @@ private extension ToastController {
     private func showDynamicIslandItem<Item: Identifiable & Equatable, ToastContent: View>(
         item: Item,
         dismissDelay: Duration?,
+        expandedHeight: CGFloat? = nil,
         onDismiss: (() -> Void)?,
         content: @escaping (Item) -> ToastContent
     ) {
@@ -488,6 +496,7 @@ private extension ToastController {
                 guard let self else { return }
                 handleDynamicIslandDismiss(userCallback: onDismiss)
             },
+            expandedHeight: expandedHeight,
             content: wrappedContent
         )
     }

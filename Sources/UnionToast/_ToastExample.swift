@@ -287,6 +287,26 @@ public struct _ToastExample: View {
                 }
             }
 
+            Button("Controller (Tall, expandedHeight: 160)") {
+                ToastController.show(style: .dynamicIsland, expandedHeight: 160) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.text.fill")
+                                .foregroundStyle(.orange)
+                            Text("Build finished")
+                                .fontWeight(.semibold)
+                        }
+                        .dynamicIslandSafeArea()
+                        Text("UnionToast compiled for iOS Simulator with 0 errors and 2 warnings.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        ProgressView(value: 1.0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                }
+            }
+
             Divider()
 
             // MARK: Controller-driven — item-based (replacement + duplicate suppression)

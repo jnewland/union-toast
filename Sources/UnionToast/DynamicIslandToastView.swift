@@ -7,18 +7,29 @@
 
 import SwiftUI
 
+/// Shared geometry constants for Dynamic Island toasts, so the SwiftUI view and the
+/// UIKit presenter (which computes the hittable rect) stay in sync.
+enum ToastIslandMetrics {
+    /// Default expanded height of a Dynamic Island toast when a physical island is present.
+    static let expandedHeight: CGFloat = 90
+}
+
 struct DynamicIslandToastView<Content: View>: View {
     @Binding var isExpanded: Bool
     var onDismiss: () -> Void
+    /// Caller-supplied expanded height override. When `nil`, the default height is used.
+    let requestedHeight: CGFloat?
     let content: () -> Content
 
     init(
         isExpanded: Binding<Bool>,
         onDismiss: @escaping () -> Void,
+        expandedHeight: CGFloat? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self._isExpanded = isExpanded
         self.onDismiss = onDismiss
+        self.requestedHeight = expandedHeight
         self.content = content
     }
 
@@ -37,7 +48,13 @@ struct DynamicIslandToastView<Content: View>: View {
 
             // Expanded properties
             let expandedWidth = size.width - 20
-            let expandedHeight: CGFloat = haveDynamicIsland ? 90 : 70
+            let defaultHeight: CGFloat = haveDynamicIsland ? ToastIslandMetrics.expandedHeight : 70
+            // Clamp the requested height so it can't collapse below the island capsule or
+            // grow past half the screen.
+            let expandedHeight: CGFloat = min(
+                max(requestedHeight ?? defaultHeight, dynamicIslandHeight),
+                size.height * 0.5
+            )
 
             // Island cutout guide for custom content layout.
             let islandGuide = ToastIslandGuide(

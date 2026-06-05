@@ -227,7 +227,7 @@ struct DynamicIslandToastModifier<ToastContent: View>: ViewModifier {
                 x: 10,
                 y: topOffset,
                 width: expandedWidth,
-                height: 90
+                height: ToastIslandMetrics.expandedHeight
             )
         } else {
             window.hittableRect = nil

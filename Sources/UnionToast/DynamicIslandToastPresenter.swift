@@ -10,12 +10,15 @@ import SwiftUI
 struct DynamicIslandToastContentWrapper: View {
     @ObservedObject var state: DynamicIslandToastStateObservable
     let onDismiss: () -> Void
+    /// Caller-supplied expanded height override (nil = default).
+    let expandedHeight: CGFloat?
     let contentProvider: () -> any View
 
     var body: some View {
         DynamicIslandToastView(
             isExpanded: $state.isExpanded,
             onDismiss: onDismiss,
+            expandedHeight: expandedHeight,
             content: { AnyView(contentProvider()) }
         )
     }
@@ -40,6 +43,10 @@ final class DynamicIslandToastPresenter {
     private let state = DynamicIslandToastState()
     private var observableState: DynamicIslandToastStateObservable = .init()
 
+    /// Expanded height of the currently presented toast (nil = default). Used to keep the
+    /// hittable rect in sync with the view's frame.
+    private var expandedHeight: CGFloat?
+
     // MARK: - UIKit handles (managed internally)
 
     private var overlayWindow: PassThroughWindow?
@@ -52,14 +59,15 @@ final class DynamicIslandToastPresenter {
     func show(
         dismissDelay: Duration,
         onDismiss: @escaping () -> Void,
+        expandedHeight: CGFloat? = nil,
         content: @escaping () -> any View
     ) {
         if isPresenting {
-            updateContent(dismissDelay: dismissDelay, onDismiss: onDismiss, content: content)
+            updateContent(dismissDelay: dismissDelay, onDismiss: onDismiss, expandedHeight: expandedHeight, content: content)
             return
         }
 
-        createOverlayWindow(dismissDelay: dismissDelay, onDismiss: onDismiss, content: content)
+        createOverlayWindow(dismissDelay: dismissDelay, onDismiss: onDismiss, expandedHeight: expandedHeight, content: content)
     }
 
     /// Dismisses the toast (triggers collapse animation + onDismiss callback).
@@ -91,10 +99,13 @@ final class DynamicIslandToastPresenter {
     private func createOverlayWindow(
         dismissDelay: Duration,
         onDismiss: @escaping () -> Void,
+        expandedHeight: CGFloat? = nil,
         content: @escaping () -> any View
     ) {
         guard let mainWindow = findMainWindow(),
               let windowScene = mainWindow.windowScene else { return }
+
+        self.expandedHeight = expandedHeight
 
         let passthroughWindow = PassThroughWindow(windowScene: windowScene)
         configurePassthroughWindow(passthroughWindow, mainWindow: mainWindow)
@@ -110,6 +121,7 @@ final class DynamicIslandToastPresenter {
         let wrapperView = DynamicIslandToastContentWrapper(
             state: observableState,
             onDismiss: { dismissHandler(); onDismiss() },
+            expandedHeight: expandedHeight,
             contentProvider: content
         )
         let hosting = StatusBarHostingController(rootView: wrapperView)
@@ -144,9 +156,12 @@ final class DynamicIslandToastPresenter {
     private func updateContent(
         dismissDelay: Duration,
         onDismiss: @escaping () -> Void,
+        expandedHeight: CGFloat? = nil,
         content: @escaping () -> any View
     ) {
         guard let hostingController, let overlayWindow else { return }
+
+        self.expandedHeight = expandedHeight
 
         // Cancel previous auto-dismiss.
         state.collapse()  // cancels the dismiss task
@@ -163,6 +178,7 @@ final class DynamicIslandToastPresenter {
         let wrapperView = DynamicIslandToastContentWrapper(
             state: observableState,
             onDismiss: { dismissHandler(); onDismiss() },
+            expandedHeight: expandedHeight,
             contentProvider: content
         )
         hostingController.rootView = wrapperView
@@ -173,6 +189,9 @@ final class DynamicIslandToastPresenter {
         state.expand()
         observableState.isExpanded = true
         hostingController.isStatusBarHidden = true
+
+        // A replacement may have a different height — refresh the hittable rect to match.
+        updateHittableRect(window: overlayWindow, expanded: true)
 
         scheduleAutoDismiss(delay: dismissDelay, onDismiss: onDismiss)
     }
@@ -215,7 +234,7 @@ final class DynamicIslandToastPresenter {
                 x: 10,
                 y: topOffset,
                 width: expandedWidth,
-                height: 90
+                height: expandedHeight ?? ToastIslandMetrics.expandedHeight
             )
         } else {
             window.hittableRect = nil
