@@ -12,6 +12,10 @@ import SwiftUI
 enum ToastIslandMetrics {
     /// Default expanded height of a Dynamic Island toast when a physical island is present.
     static let expandedHeight: CGFloat = 90
+
+    /// Maximum toast width on wide screens (iPad, landscape). On phones the full-width
+    /// minus padding is used; on tablets this cap keeps the toast a compact centred pill.
+    static let maxWidth: CGFloat = 500
 }
 
 struct DynamicIslandToastView<Content: View>: View {
@@ -46,8 +50,9 @@ struct DynamicIslandToastView<Content: View>: View {
             let dynamicIslandHeight: CGFloat = 36
             let topOffset: CGFloat = 11 + max((safeArea.top - 59), 0)
 
-            // Expanded properties
-            let expandedWidth = size.width - 20
+            // Expanded properties — cap width on wide screens so the toast stays a
+            // compact centred pill rather than spanning an entire iPad.
+            let expandedWidth = min(size.width - 20, ToastIslandMetrics.maxWidth)
             let defaultHeight: CGFloat = haveDynamicIsland ? ToastIslandMetrics.expandedHeight : 70
             // Clamp the requested height so it can't collapse below the island capsule or
             // grow past half the screen.

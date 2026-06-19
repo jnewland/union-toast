@@ -228,10 +228,11 @@ final class DynamicIslandToastPresenter {
             let screenWidth = window.bounds.width
             let safeAreaTop = window.safeAreaInsets.top
             let topOffset: CGFloat = 11 + max((safeAreaTop - 59), 0)
-            let expandedWidth = screenWidth - 20
+            let expandedWidth = min(screenWidth - 20, ToastIslandMetrics.maxWidth)
+            let x: CGFloat = (screenWidth - expandedWidth) / 2
 
             window.hittableRect = CGRect(
-                x: 10,
+                x: x,
                 y: topOffset,
                 width: expandedWidth,
                 height: expandedHeight ?? ToastIslandMetrics.expandedHeight
