@@ -19,17 +19,19 @@ class PassThroughWindow: UIWindow {
             return nil
         }
 
-        // If we have a defined hittable rect, check if the point is inside
-        if let rect = hittableRect, rect.contains(point) {
-            return hitView
+        // If we have a defined hittable rect, only intercept hits inside it.
+        // Taps outside the toast area must pass through to windows below (toolbar, nav bar).
+        if let rect = hittableRect {
+            return rect.contains(point) ? hitView : nil
         }
 
-        // If the hit view is not the root view itself, something inside was tapped
+        // No hittable rect — if something other than the bare root view was hit, return it.
+        // This preserves normal behaviour when no toast is active (e.g. compact Dynamic Island capsule).
         if hitView !== rootView {
             return hitView
         }
 
-        // Fallback: check subviews explicitly
+        // Fallback: check subviews explicitly (for edge cases where super.hitTest returns root)
         for subview in rootView.subviews.reversed() {
             let pointInSubview = subview.convert(point, from: rootView)
             if subview.hitTest(pointInSubview, with: event) != nil {
