@@ -26,6 +26,8 @@ class ToastManager {
     private let onDismiss: ((UUID) -> Void)?
     /// Called when a dismissal has finished animating out and no toast is waiting to show.
     var onIdle: (() -> Void)?
+    /// Called just before a toast shows.
+    var onWillShow: (() -> Void)?
 
     init(dismissDelay: Duration = .seconds(6.5), onDismiss: ((UUID) -> Void)? = nil) {
         self.dismissDelay = dismissDelay
@@ -46,6 +48,7 @@ class ToastManager {
     }
 
     func show() {
+        onWillShow?()
         cancelReplacement()
         cancelTask()
         let newPresentationID = UUID()
@@ -131,8 +134,11 @@ class ToastManager {
     }
 
     func notifyDismissAnimationCompleted() {
+        // The toast view also reports this as it first appears, before anything has shown,
+        // so only a dismissal that was animating out counts.
+        let didAnimateOut = isAnimatingOut
         isAnimatingOut = false
-        if !isShowing && pendingShowAction == nil {
+        if didAnimateOut && !isShowing && pendingShowAction == nil {
             onIdle?()
         }
         runPendingShowActionIfPossible()
