@@ -24,6 +24,8 @@ class ToastManager {
 
     private let dismissDelay: Duration
     private let onDismiss: ((UUID) -> Void)?
+    /// Called when a dismissal has finished animating out and no toast is waiting to show.
+    var onIdle: (() -> Void)?
 
     init(dismissDelay: Duration = .seconds(6.5), onDismiss: ((UUID) -> Void)? = nil) {
         self.dismissDelay = dismissDelay
@@ -130,6 +132,9 @@ class ToastManager {
 
     func notifyDismissAnimationCompleted() {
         isAnimatingOut = false
+        if !isShowing && pendingShowAction == nil {
+            onIdle?()
+        }
         runPendingShowActionIfPossible()
     }
 
