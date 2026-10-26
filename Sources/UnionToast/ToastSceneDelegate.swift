@@ -97,6 +97,17 @@ class ToastSceneDelegate: NSObject {
 
         self.overlayWindow = passthroughOverlayWindow
         self.hostingController = hosting
+
+        // Hide the overlay between toasts. It covers the whole scene, and although touches
+        // pass through it, an iPad app running on a Mac delivers drag and drop to it instead
+        // of the windows below, so nothing in the app could accept a drop once a toast had
+        // shown. It shows again whenever a toast does.
+        manager.onIdle = { [weak passthroughOverlayWindow] in
+            passthroughOverlayWindow?.isHidden = true
+        }
+        manager.onWillShow = { [weak passthroughOverlayWindow] in
+            passthroughOverlayWindow?.isHidden = false
+        }
         syncInterfaceStyle()
         return manager
     }
@@ -123,6 +134,7 @@ class ToastSceneDelegate: NSObject {
             return
         }
 
+        overlayWindow.isHidden = false
         syncInterfaceStyle()
         
         let hosting = UIHostingController(
@@ -164,6 +176,7 @@ class ToastSceneDelegate: NSObject {
             return
         }
 
+        overlayWindow.isHidden = false
         syncInterfaceStyle()
         
         let newRootView = ToastOverlayView(
